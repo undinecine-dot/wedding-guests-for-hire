@@ -1,0 +1,14 @@
+{
+  "name": "wedding-guests-for-hire",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vercel dev",
+    "start": "vercel dev",
+    "check": "node --check api/lib/core.mjs && node --check api/transactions.mjs && node --check api/telegram-webhook.mjs && node --check public/app.js"
+  },
+  "devDependencies": {
+    "vercel": "latest"
+  }
+}

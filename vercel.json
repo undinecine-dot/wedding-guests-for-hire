@@ -1,0 +1,4 @@
+{
+  "rewrites": [{ "source": "/", "destination": "/index.html" }],
+  "functions": { "api/*.mjs": { "runtime": "nodejs22.x" } }
+}
