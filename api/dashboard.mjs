@@ -12,16 +12,18 @@ export default async function handler(req, res) {
     const managerView = actor === 'svetlana';
     const sales = managerView ? allSales : allSales.filter((row) => row.salesperson_code === actor);
     const expenses = managerView ? allExpenses : allExpenses.filter((row) => row.reporter_code === actor);
-    const approved = sales.filter(x => x.status === 'approved');
+    const calculationSales = managerView ? sales.filter((row) => /^S0[1-5]$/.test(row.reference)) : sales;
+    const calculationExpenses = managerView ? expenses.filter((row) => /^E0[1-7]$/.test(row.reference)) : expenses;
+    const approved = calculationSales.filter(x => x.status === 'approved');
     const project = (p) => {
       const projectSales = approved.filter(x => x.project === p);
-      const allocated = expenses.filter(x => x.status === 'allocated' && x.final_allocation === p);
+      const allocated = calculationExpenses.filter(x => x.status === 'allocated' && x.final_allocation === p);
       const income = projectSales.reduce((a,x) => a+n(x.amount),0), commission = projectSales.reduce((a,x) => a+n(x.commission_pool),0), expense = allocated.reduce((a,x)=>a+n(x.amount),0);
       return { income:r(income), commission:r(commission), expense:r(expense), result:r(income-commission-expense) };
     };
-    const companyIncome = approved.reduce((a,x)=>a+n(x.amount),0), companyCommission = approved.reduce((a,x)=>a+n(x.commission_pool),0), recordedExpenses = expenses.reduce((a,x)=>a+n(x.amount),0);
-    const overhead = expenses.filter(x=>x.status === 'allocated' && x.final_allocation === 'overhead').reduce((a,x)=>a+n(x.amount),0);
-    const awaiting = expenses.filter(x=>x.status === 'awaiting_allocation').reduce((a,x)=>a+n(x.amount),0);
+    const companyIncome = approved.reduce((a,x)=>a+n(x.amount),0), companyCommission = approved.reduce((a,x)=>a+n(x.commission_pool),0), recordedExpenses = calculationExpenses.reduce((a,x)=>a+n(x.amount),0);
+    const overhead = calculationExpenses.filter(x=>x.status === 'allocated' && x.final_allocation === 'overhead').reduce((a,x)=>a+n(x.amount),0);
+    const awaiting = calculationExpenses.filter(x=>x.status === 'awaiting_allocation').reduce((a,x)=>a+n(x.amount),0);
     const commissions = { richard: r(approved.reduce((a,x)=>a+n(x.commission_richard),0)), anastasia:r(approved.reduce((a,x)=>a+n(x.commission_anastasia),0)), 'jean-claude':r(approved.reduce((a,x)=>a+n(x.commission_jean_claude),0)) };
     json(res, 200, { ok:true, scope: managerView ? 'manager' : 'employee', actor, sales, expenses, employees: managerView ? employees : [], totals: { A:project('A'), B:project('B'), company:{income:r(companyIncome),commission:r(companyCommission),overhead:r(overhead),awaiting:r(awaiting),result:r(companyIncome-companyCommission-recordedExpenses)}, commissions } });
   } catch (err) { error(res, 500, err.message); }
